@@ -3,8 +3,10 @@ from django.template import Variable, Library, Node, TemplateSyntaxError
 from django.template.loader import render_to_string
 from django.urls import reverse
 
-from actstream.models import Follow, Action
+from actstream import get_action_model, get_follow_model
 
+Action = get_action_model()
+Follow = get_follow_model()
 
 register = Library()
 

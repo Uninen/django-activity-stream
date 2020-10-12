@@ -9,20 +9,24 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django.utils.timezone import now
 
-from actstream import settings as actstream_settings
+from actstream import get_action_model, get_follow_model, settings as actstream_settings
 from actstream.managers import FollowManager
 
 
-class Follow(models.Model):
+class AbstractFollow(models.Model):
     """
     Lets a user follow the activities of any specific actor
     """
     user = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_index=True
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, db_index=True,
+        related_name="%(app_label)s_%(class)s_follows",
+        related_query_name="%(app_label)s_%(class)s_follows"
     )
 
     content_type = models.ForeignKey(
-        ContentType, on_delete=models.CASCADE, db_index=True
+        ContentType, on_delete=models.CASCADE, db_index=True,
+        related_name="%(app_label)s_%(class)s_follow_objects",
+        related_query_name="%(app_label)s_%(class)s_follow_objects"
     )
     object_id = models.CharField(max_length=255, db_index=True)
     follow_object = GenericForeignKey()
@@ -36,13 +40,14 @@ class Follow(models.Model):
     objects = FollowManager()
 
     class Meta:
+        abstract = True
         unique_together = ('user', 'content_type', 'object_id', 'flag')
 
     def __str__(self):
         return '{} -> {} : {}'.format(self.user, self.follow_object, self.flag)
 
 
-class Action(models.Model):
+class AbstractAction(models.Model):
     """
     Action model describing the actor acting out a verb (on an optional
     target).
@@ -72,8 +77,10 @@ class Action(models.Model):
 
     """
     actor_content_type = models.ForeignKey(
-        ContentType, related_name='actor',
-        on_delete=models.CASCADE, db_index=True
+        ContentType,
+        on_delete=models.CASCADE, db_index=True,
+        related_name="%(app_label)s_%(class)s_actors",
+        related_query_name="%(app_label)s_%(class)s_actors"
     )
     actor_object_id = models.CharField(max_length=255, db_index=True)
     actor = GenericForeignKey('actor_content_type', 'actor_object_id')
@@ -83,8 +90,9 @@ class Action(models.Model):
 
     target_content_type = models.ForeignKey(
         ContentType, blank=True, null=True,
-        related_name='target',
-        on_delete=models.CASCADE, db_index=True
+        on_delete=models.CASCADE, db_index=True,
+        related_name="%(app_label)s_%(class)s_targets",
+        related_query_name="%(app_label)s_%(class)s_targets"
     )
     target_object_id = models.CharField(
         max_length=255, blank=True, null=True, db_index=True
@@ -96,8 +104,9 @@ class Action(models.Model):
 
     action_object_content_type = models.ForeignKey(
         ContentType, blank=True, null=True,
-        related_name='action_object',
-        on_delete=models.CASCADE, db_index=True
+        on_delete=models.CASCADE, db_index=True,
+        related_name="%(app_label)s_%(class)s_action_objects",
+        related_query_name="%(app_label)s_%(class)s_action_objects"
     )
     action_object_object_id = models.CharField(
         max_length=255, blank=True, null=True, db_index=True
@@ -114,6 +123,7 @@ class Action(models.Model):
     objects = actstream_settings.get_action_manager()
 
     class Meta:
+        abstract = True
         ordering = ('-timestamp',)
 
     def __str__(self):
@@ -165,12 +175,22 @@ class Action(models.Model):
             'actstream.views.detail', [self.pk])
 
 
+class Follow(AbstractFollow):
+    class Meta(AbstractFollow.Meta):
+        swappable = 'ACTSTREAM_FOLLOW_MODEL'
+
+
+class Action(AbstractAction):
+    class Meta(AbstractAction.Meta):
+        swappable = 'ACTSTREAM_ACTION_MODEL'
+
+
 # convenient accessors
-actor_stream = Action.objects.actor
-action_object_stream = Action.objects.action_object
-target_stream = Action.objects.target
-user_stream = Action.objects.user
-model_stream = Action.objects.model_actions
-any_stream = Action.objects.any
-followers = Follow.objects.followers
-following = Follow.objects.following
+actor_stream = get_action_model().objects.actor
+action_object_stream = get_action_model().objects.action_object
+target_stream = get_action_model().objects.target
+user_stream = get_action_model().objects.user
+model_stream = get_action_model().objects.model_actions
+any_stream = get_action_model().objects.any
+followers = get_follow_model().objects.followers
+following = get_follow_model().objects.following

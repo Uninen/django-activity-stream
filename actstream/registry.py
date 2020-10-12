@@ -5,6 +5,7 @@ from django.apps import apps
 from django.contrib.contenttypes.fields import GenericRelation
 from django.db.models.base import ModelBase
 from django.core.exceptions import ImproperlyConfigured
+from actstream import get_action_model
 
 
 class RegistrationError(Exception):
@@ -15,11 +16,11 @@ def setup_generic_relations(model_class):
     """
     Set up GenericRelations for actionable models.
     """
-    Action = apps.get_model('actstream', 'action')
+    Action = get_action_model()
 
     if Action is None:
         raise RegistrationError(
-            'Unable get actstream.Action. Potential circular imports '
+            'Unable get action model. Potential circular imports '
             'in initialisation. Try moving actstream app to come after the '
             'apps which have models to register in the INSTALLED_APPS setting.'
         )

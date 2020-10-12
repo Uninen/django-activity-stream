@@ -3,6 +3,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.db.models import Q
 
 
+from actstream import get_follow_model
 from actstream.gfk import GFKManager
 from actstream.decorators import stream
 from actstream.registry import check
@@ -97,7 +98,7 @@ class ActionManager(GFKManager):
                 actor_object_id=obj.pk
             )
 
-        follows = apps.get_model('actstream', 'follow').objects.filter(user=obj)
+        follows = get_follow_model().objects.filter(user=obj)
         if follow_flag:
             follows = follows.filter(flag=follow_flag)
             

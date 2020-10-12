@@ -1,6 +1,6 @@
 from django.apps import AppConfig
 
-from actstream import settings
+from actstream import get_action_model, settings
 from actstream.signals import action
 
 
@@ -10,7 +10,7 @@ class ActstreamConfig(AppConfig):
     def ready(self):
         from actstream.actions import action_handler
         action.connect(action_handler, dispatch_uid='actstream.models')
-        action_class = self.get_model('action')
+        action_class = get_action_model()
 
         if settings.USE_JSONFIELD and not hasattr(action_class, 'data'):
             from actstream.jsonfield import DataField, register_app

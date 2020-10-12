@@ -1,7 +1,3 @@
-from django.apps import apps as django_apps
-from django.conf import settings as django_settings
-from django.core.exceptions import ImproperlyConfigured
-
 try:
     from actstream.signals import action
 except:
@@ -14,6 +10,10 @@ default_app_config = 'actstream.apps.ActstreamConfig'
 
 
 def get_swappable_model(model_setting, default):
+    from django.apps import apps as django_apps
+    from django.conf import settings as django_settings
+    from django.core.exceptions import ImproperlyConfigured
+
     model_lookup = getattr(django_settings, model_setting, default)
     try:
         return django_apps.get_model(model_lookup, require_ready=False)

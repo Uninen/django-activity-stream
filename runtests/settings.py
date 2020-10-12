@@ -97,6 +97,7 @@ INSTALLED_APPS = (
 
     'actstream',
 
+    'custom_models',
     'testapp',
     'testapp_nested',
 )

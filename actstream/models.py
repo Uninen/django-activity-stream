@@ -9,6 +9,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.urls import reverse
 from django.utils.timezone import now
 
+from actstream.utils import lazy_module_property
 from actstream import get_action_model, get_follow_model, settings as actstream_settings
 from actstream.managers import FollowManager
 
@@ -186,11 +187,39 @@ class Action(AbstractAction):
 
 
 # convenient accessors
-actor_stream = get_action_model().objects.actor
-action_object_stream = get_action_model().objects.action_object
-target_stream = get_action_model().objects.target
-user_stream = get_action_model().objects.user
-model_stream = get_action_model().objects.model_actions
-any_stream = get_action_model().objects.any
-followers = get_follow_model().objects.followers
-following = get_follow_model().objects.following
+
+@lazy_module_property
+def _actor_stream():
+    return get_action_model().objects.actor
+
+@lazy_module_property
+def _action_object_stream():
+    return get_action_model().objects.action_object
+
+@lazy_module_property
+def _target_stream():
+    return get_action_model().objects.target
+
+@lazy_module_property
+def _user_stream():
+    return get_action_model().objects.user
+
+@lazy_module_property
+def _model_stream():
+    return get_action_model().objects.model_actions
+
+@lazy_module_property
+def _actor_stream():
+    return get_action_model().objects.actor
+
+@lazy_module_property
+def _any_stream():
+    return get_action_model().objects.any
+
+@lazy_module_property
+def _followers():
+    return get_follow_model().objects.followers
+
+@lazy_module_property
+def _following():
+    return get_follow_model().objects.following

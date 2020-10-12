@@ -1,18 +1,14 @@
+from actstream import get_action_model, get_follow_model
 from django.contrib.contenttypes.models import ContentType
-from django.template import Variable, Library, Node, TemplateSyntaxError
+from django.template import Library, Node, TemplateSyntaxError, Variable
 from django.template.loader import render_to_string
 from django.urls import reverse
-
-from actstream import get_action_model, get_follow_model
-
-Action = get_action_model()
-Follow = get_follow_model()
 
 register = Library()
 
 
 class DisplayActivityFollowUrl(Node):
-    def __init__(self, actor, actor_only=True, flag=''):
+    def __init__(self, actor, actor_only=True, flag=""):
         self.actor = Variable(actor)
         self.actor_only = actor_only
         self.flag = flag
@@ -21,19 +17,18 @@ class DisplayActivityFollowUrl(Node):
         actor_instance = self.actor.resolve(context)
         content_type = ContentType.objects.get_for_model(actor_instance).pk
 
-        kwargs = {
-            'content_type_id': content_type,
-            'object_id': actor_instance.pk
-        }
+        kwargs = {"content_type_id": content_type, "object_id": actor_instance.pk}
 
         if self.flag:
-            kwargs['flag'] = self.flag
+            kwargs["flag"] = self.flag
 
-        if Follow.objects.is_following(context.get('user'), actor_instance, flag=self.flag):
-            return reverse('actstream_unfollow', kwargs=kwargs)
+        if get_follow_model().objects.is_following(
+            context.get("user"), actor_instance, flag=self.flag
+        ):
+            return reverse("actstream_unfollow", kwargs=kwargs)
         if self.actor_only:
-            return reverse('actstream_follow', kwargs=kwargs)
-        return reverse('actstream_follow_all', kwargs=kwargs)
+            return reverse("actstream_follow", kwargs=kwargs)
+        return reverse("actstream_follow_all", kwargs=kwargs)
 
 
 class DisplayActivityActorUrl(Node):
@@ -43,8 +38,10 @@ class DisplayActivityActorUrl(Node):
     def render(self, context):
         actor_instance = self.actor.resolve(context)
         content_type = ContentType.objects.get_for_model(actor_instance).pk
-        return reverse('actstream_actor', kwargs={
-            'content_type_id': content_type, 'object_id': actor_instance.pk})
+        return reverse(
+            "actstream_actor",
+            kwargs={"content_type_id": content_type, "object_id": actor_instance.pk},
+        )
 
 
 class AsNode(Node):
@@ -52,6 +49,7 @@ class AsNode(Node):
     Base template Node class for template tags that takes a predefined number
     of arguments, ending in an optional 'as var' section.
     """
+
     args_count = 1
 
     @classmethod
@@ -59,21 +57,23 @@ class AsNode(Node):
         """
         Class method to parse and return a Node.
         """
-        tag_error = "Accepted formats {%% %(tagname)s %(args)s %%} or " \
-                    "{%% %(tagname)s %(args)s as [var] %%}"
+        tag_error = (
+            "Accepted formats {%% %(tagname)s %(args)s %%} or "
+            "{%% %(tagname)s %(args)s as [var] %%}"
+        )
         bits = token.split_contents()
         args_count = len(bits) - 1
-        if args_count >= 2 and bits[-2] == 'as':
+        if args_count >= 2 and bits[-2] == "as":
             as_var = bits[-1]
             args_count -= 2
         else:
             as_var = None
         if args_count != cls.args_count:
-            arg_list = ' '.join(['[arg]' * cls.args_count])
-            raise TemplateSyntaxError(tag_error % {'tagname': bits[0],
-                                                   'args': arg_list})
-        args = [parser.compile_filter(tkn)
-                for tkn in bits[1:args_count + 1]]
+            arg_list = " ".join(["[arg]" * cls.args_count])
+            raise TemplateSyntaxError(
+                tag_error % {"tagname": bits[0], "args": arg_list}
+            )
+        args = [parser.compile_filter(tkn) for tkn in bits[1 : args_count + 1]]
         return cls(args, varname=as_var)
 
     def __init__(self, args, varname=None):
@@ -84,7 +84,7 @@ class AsNode(Node):
         result = self.render_result(context)
         if self.varname is not None:
             context[self.varname] = result
-            return ''
+            return ""
         return result
 
     def render_result(self, context):
@@ -92,12 +92,11 @@ class AsNode(Node):
 
 
 class DisplayAction(AsNode):
-
     def render_result(self, context):
-        action_instance = context['action'] = self.args[0].resolve(context)
+        action_instance = context["action"] = self.args[0].resolve(context)
         templates = [
-            'actstream/%s/action.html' % action_instance.verb.replace(' ', '_'),
-            'actstream/action.html',
+            "actstream/%s/action.html" % action_instance.verb.replace(" ", "_"),
+            "actstream/action.html",
         ]
         return render_to_string(templates, context.flatten())
 
@@ -123,7 +122,7 @@ def is_following(user, actor):
             You are already following {{ another_user }}
         {% endif %}
     """
-    return Follow.objects.is_following(user, actor)
+    return get_follow_model().objects.is_following(user, actor)
 
 
 class IsFollowing(AsNode):
@@ -134,7 +133,7 @@ class IsFollowing(AsNode):
         actor = self.args[1].resolve(context)
         flag = self.args[2].resolve(context)
 
-        return Follow.objects.is_following(user, actor, flag=flag)
+        return get_follow_model().objects.is_following(user, actor, flag=flag)
 
 
 def is_following_tag(parser, token):
@@ -178,7 +177,9 @@ def follow_url(parser, token):
     bits = token.split_contents()
 
     if len(bits) > 3:
-        raise TemplateSyntaxError("Accepted format {% follow_url [instance] %} or {% follow_url [instance] [flag] %}")
+        raise TemplateSyntaxError(
+            "Accepted format {% follow_url [instance] %} or {% follow_url [instance] [flag] %}"
+        )
     elif len(bits) == 2:
         return DisplayActivityFollowUrl(bits[1])
     else:
@@ -233,8 +234,7 @@ def actor_url(parser, token):
     """
     bits = token.split_contents()
     if len(bits) != 2:
-        raise TemplateSyntaxError("Accepted format "
-                                  "{% actor_url [actor_instance] %}")
+        raise TemplateSyntaxError("Accepted format " "{% actor_url [actor_instance] %}")
     else:
         return DisplayActivityActorUrl(*bits[1:])
 
@@ -252,18 +252,18 @@ def activity_stream(context, stream_type, *args, **kwargs):
             {% display_action action %}
         {% endfor %}
     """
-    if stream_type == 'model':
-        stream_type = 'model_actions'
-    if not hasattr(Action.objects, stream_type):
-        raise TemplateSyntaxError('Action manager has no attribute: %s' % stream_type)
-    ctxvar = kwargs.pop('as', 'stream')
-    context[ctxvar] = getattr(Action.objects, stream_type)(*args, **kwargs)
-    return ''
+    if stream_type == "model":
+        stream_type = "model_actions"
+    if not hasattr(get_action_model().objects, stream_type):
+        raise TemplateSyntaxError("Action manager has no attribute: %s" % stream_type)
+    ctxvar = kwargs.pop("as", "stream")
+    context[ctxvar] = getattr(get_action_model().objects, stream_type)(*args, **kwargs)
+    return ""
 
 
 register.filter(activity_stream)
 register.filter(is_following)
-register.tag(name='is_following', compile_function=is_following_tag)
+register.tag(name="is_following", compile_function=is_following_tag)
 register.tag(display_action)
 register.tag(follow_url)
 register.tag(follow_all_url)

@@ -31,7 +31,7 @@ Settings
 --------
 
 Update these settings in your project's ``settings.py``.
-As of v0.4.4, all settings are contained inside the ``ACTSTREAM_SETTINGS`` dictionary.
+As of v0.4.4, most settings are contained inside the ``ACTSTREAM_SETTINGS`` dictionary.
 Here is an example of what you can set in your ``settings.py``
 
 .. code-block:: python
@@ -53,6 +53,10 @@ Here is an example of what you can set in your ``settings.py``
     In v0.5 and above, since only Django>=1.4 is supported all generic lookups fall back to `QuerySet.prefetch_related <https://docs.djangoproject.com/en/dev/ref/models/querysets/#django.db.models.query.QuerySet.prefetch_related>`_
     so the ``USE_PREFETCH`` and ``GFK_FETCH_DEPTH`` settings have been deprecated.
 
+.. note::
+
+    Due to the nature of how swappable models work using the Django API, values for these configuration parameters are not nested within the ``ACTSTREAM_SETTINGS`` dictionary as with others, and
+    exist at the settings root.
 
 Supported settings are defined below.
 
@@ -111,3 +115,27 @@ Number of levels of relations that ``select_related`` will perform.
 Only matters if you are not running ``prefetch_related`` (Django<=1.3).
 
 Defaults to ``0``
+
+ACTSTREAM_ACTION_MODEL
+**********************
+
+This setting allows users to swap the default action model used throughout
+this package with one of their own. Set this to a
+``'app_label.model_name'`` string pointing to your own model to override the
+default action model used. Your model should inherit from the abstract
+`AbstractAction` model.
+
+
+Defaults to ``'actstream.Action'``.
+
+ACTSTREAM_FOLLOW_MODEL
+**********************
+
+This setting allows users to swap the default follow model used throughout
+this package with one of their own. Set this to a
+``'app_label.model_name'`` string pointing to your own model to override the
+default follow model used. Your model should inherit from the abstract
+`AbstractFollow` model.
+
+
+Defaults to ``'actstream.Follow'``.

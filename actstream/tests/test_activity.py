@@ -6,11 +6,16 @@ from django.utils.translation import ugettext_lazy as _
 from django.utils.translation import activate, get_language
 from django.urls import reverse
 
-from actstream.models import (Action, Follow, model_stream, user_stream,
+from actstream import get_action_model, get_follow_model
+from actstream.models import (model_stream, user_stream,
                               actor_stream, following, followers)
 from actstream.actions import follow, unfollow
 from actstream.signals import action
 from actstream.tests.base import DataTestCase, render
+
+
+Action = get_action_model()
+Follow = get_follow_model()
 
 
 class ActivityTestCase(DataTestCase):

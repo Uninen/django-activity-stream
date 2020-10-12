@@ -3,8 +3,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.contrib.auth.models import Group
 
-from actstream.models import Action
+from actstream import get_action_model
 from actstream.tests.base import LTE
+
+
+Action = get_action_model()
 
 
 class GFKManagerTestCase(TestCase):

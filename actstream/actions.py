@@ -111,15 +111,20 @@ def action_handler(verb, **kwargs):
     kwargs.pop('signal', None)
     actor = kwargs.pop('sender')
 
-    # We must store the unstranslated string
-    # If verb is an ugettext_lazyed string, fetch the original string
-    if hasattr(verb, '_proxy____args'):
-        verb = verb._proxy____args[0]
+    verb_as_string = kwargs.pop('coerce_verb_as_string', True)
+
+    if verb_as_string:
+        # We must store the unstranslated string
+        # If verb is an ugettext_lazyed string, fetch the original string
+        if hasattr(verb, '_proxy____args'):
+            verb = verb._proxy____args[0]
+
+        verb = str(verb)
 
     newaction = Action(
         actor_content_type=ContentType.objects.get_for_model(actor),
         actor_object_id=actor.pk,
-        verb=str(verb),
+        verb=verb,
         public=bool(kwargs.pop('public', True)),
         description=kwargs.pop('description', None),
         timestamp=kwargs.pop('timestamp', now())
